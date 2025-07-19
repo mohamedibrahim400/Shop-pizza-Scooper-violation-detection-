@@ -1,0 +1,40 @@
+version: '3.9'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"      # لـ Pika
+      - "15672:15672"    # واجهة الويب
+    container_name: rabbitmq
+
+  frame-reader:
+    build: ./frame-reader
+    volumes:
+      - ./videos:/videos
+    depends_on:
+      - rabbitmq
+  
+  detection-service:
+    build: ./detection-service
+    volumes:
+      - ./models:/models
+      - ./violations:/violations
+      - ./debug:/debug
+    depends_on:
+      - rabbitmq
+
+  streaming-service:
+    build: ./streaming-service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - detection-service
+    volumes:
+      - ./models:/models
+      - ./videos:/videos
+      - ./violations:/violations
+      - ./detection-service:/app
+
+
+  
